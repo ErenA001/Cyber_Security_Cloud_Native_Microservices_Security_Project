@@ -4,7 +4,7 @@
 > **Instructor:** Ahmed El-Hadad
 > **Assigned Topic:** 4. Security of Cloud-Native Applications and Microservices
 > **Group:** `CS__` (fill in)
-> **Deadline:** 23 December 2026
+> **Deadline:** 11 December 2026, 17:00
 
 ---
 
@@ -114,12 +114,12 @@ docker compose up --build
 
 | Dates | Goal |
 |-------|------|
-| 14–20 Nov | Confirm scope and format, create repo, assign tasks |
-| 21 Nov – 4 Dec | Build and scan the insecure version (v1) |
-| 5 – 14 Dec | Apply security controls (v2) |
-| 15 – 20 Dec | Attack and resilience tests, report, slides |
-| 21 – 22 Dec | Rehearsal and backup plan |
-| 23 Dec | Deadline |
+| 14–18 Nov | Confirm scope and format, add team to repo, assign tasks |
+| 19–27 Nov | Build and scan the insecure version (v1) |
+| 28 Nov – 4 Dec | Apply security controls (v2) |
+| 5–9 Dec | Attack and resilience tests, report, slides |
+| 10 Dec | Rehearsal and backup plan |
+| 11 Dec, 17:00 | Deadline |
 
 ## 11. Status
 
