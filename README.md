@@ -1,148 +1,275 @@
-# Cyber Security Project: Securing Microservices – Docker and API Security
+# CloudGuard AI 2.0.1
 
-> **Course:** 1400002063 – Cyber Security
-> **Instructor:** Ahmed El-Hadad
-> **Assigned Topic:** 4. Security of Cloud-Native Applications and Microservices
-> **Group:** `CS__` (fill in)
-> **Deadline:** 11 December 2026, 17:00
+**Course:** 1400002063 - Cyber Security
+**Group:** CS24
+**Assigned topic:** Topic 4 - Security of Cloud-Native Applications and Microservices
+**Project type:** Local Docker-based educational security platform
 
----
+CloudGuard AI is a local security operations workspace that demonstrates how a cloud-native microservices application can authenticate users, isolate services, collect security events, assess container images, and use an AI analyst to explain security evidence. The original Flask/Nginx/NVIDIA prototype has been evolved into a Docker Compose application with FastAPI services, a persistent web interface, safe lab simulations, real Trivy image scanning, and a security regression suite.
 
-## 1. Project Overview
+The project is intended for an authorized university demonstration. It is not a production SOC, a penetration-testing certification, or an automated remediation system.
 
-Modern applications are no longer single programs. They are split into small services (microservices), packaged in Docker containers, and talk to each other through APIs. This makes them flexible, but it also creates many new places to attack.
+## 1. Capabilities
 
-This project builds a small, **live microservice system** that uses an AI model through the NVIDIA NIM API, and then shows **how it can be attacked and how it can be protected**.
+- Responsive security dashboard with 24-hour event metrics, service health, recent activity, and an AI briefing.
+- NVIDIA NIM chat using the OpenAI-compatible Chat Completions API. The API key remains on the backend.
+- Persistent, per-user AI conversation history stored in local SQLite.
+- AI event triage using structured monitor events and saved Trivy scan reports.
+- Authentication service with Argon2 password hashing, signed JWTs, HttpOnly/SameSite cookies, and self-service password changes.
+- Dedicated loopback-only Nginx edge proxy in front of an internal Nginx application gateway; the application gateway applies request throttling and security response headers.
+- Monitoring service with persistent SQLite event, scan-report, and assessment-report stores.
+- Safe synthetic lab scenarios for brute-force patterns, unauthorized API access, container findings, prompt-injection signals, and rate-limit events.
+- Real local Docker image scanning through Trivy. The scanner receives a read-only exported image archive; it is not given the Docker socket.
+- Authenticated security regression script that tests the running application and saves a result summary in the dashboard.
+- Lightweight resilience check for service health, response latency, restart policies, health checks, and network exposure.
+- Before/after control matrix mapped to the original insecure repository baseline.
+- JSON security report export containing summary metrics, recent events, scan reports, assessment results, configured controls, and known limitations.
+- Docker health checks, non-root application processes, read-only container root filesystems, dropped Linux capabilities, and isolated Docker networks.
 
-**Project in one sentence:** we build a working AI-powered microservice system, attack our own system, fix the weaknesses, and prove the improvement with measurements.
+## Visual evidence and demo
 
-## 2. Objectives
+The screenshots below document the currently demonstrated Overview and AI event-triage flow. The demo video is a short, silent walkthrough assembled from these screenshots; it is not a live recording of every page.
 
-1. Build a live system of 3 small services running in Docker containers.
-2. Identify security weaknesses in container, API and service-to-service layers.
-3. Apply security controls and compare the system **before and after**.
-4. Test the system's stability with failure and load scenarios.
-5. Document the results with references to NIST and OWASP guidance.
+![CloudGuard AI overview dashboard](docs/screenshots/01-overview-dashboard.jpg)
 
-## 3. Planned Architecture
+![AI event analysis in progress](docs/screenshots/02-ai-analysis-running.jpg)
 
-```
-User ──► Gateway (Nginx) ──► Auth Service (JWT)
-                         ├─► AI Service ──► NVIDIA NIM API
-                         └─► Log / Monitoring Service
-```
+![NVIDIA NIM connected and analyst briefing completed](docs/screenshots/03-ai-analysis-completed.jpg)
 
-| Component | Role |
-|-----------|------|
-| **Gateway** | Single entry point. Checks requests, applies rate limiting. |
-| **Auth service** | Login and token (JWT) issuing and validation. |
-| **AI service** | Sends user questions to the NVIDIA NIM API. API key is stored as a secret. |
-| **Log / Monitoring service** | Collects logs and detects suspicious activity. |
+![CloudGuard AI demo preview](docs/demo/cloudguard-ai-demo-preview.gif)
 
-> The final architecture may change as the team decides. This is the starting plan.
+<!-- GITHUB_INLINE_VIDEO_START -->
+For inline playback, upload `docs/demo/cloudguard-ai-overview-demo.mp4` as a GitHub Markdown video attachment, then replace this note with the generated asset URL on its own line. See [demo media instructions](docs/demo/README.md).
+<!-- GITHUB_INLINE_VIDEO_END -->
 
-## 4. Security Focus Areas
+See [the implementation progress and validation record](docs/PROJECT_PROGRESS.md) for completed work, test evidence, limitations, and remaining tasks.
 
-| Area | What we will show |
-|------|-------------------|
-| **Container security** | Image scanning (Trivy), non-root containers, minimal base images |
-| **API security** | Authentication, authorization, rate limiting, input validation (OWASP API Security Top 10, 2023) |
-| **Service-to-service security** | Network isolation between services, token checks between services |
-| **Secrets management** | API keys never stored in code or in the repository |
-| **Monitoring and logging** | Detecting brute-force attempts and abnormal traffic |
-| **AI-specific risks** | Prompt injection tests on the AI service |
+## 2. Architecture
 
-## 5. Method: "Insecure → Secure"
-
-1. **v1 (insecure):** Build the system with intentional weaknesses.
-2. **Scan and attack:** Find the problems with scanners and manual tests on our own system.
-3. **v2 (secure):** Apply fixes.
-4. **Compare:** Scan and test again, and report the difference.
-
-## 6. Test Plan
-
-- Too many requests in a short time (rate limiting test)
-- Wrong password attempts (brute-force detection)
-- Access without a token, or with a wrong token
-- Oversized or malformed input
-- Prompt injection attempts against the AI service
-- Random container shutdown (does the system recover automatically?)
-- Image vulnerability scan before and after hardening
-
-## 7. Repository Structure (planned)
-
-```
-.
-├── README.md
-├── docker-compose.yml
-├── .env.example          # example only, never commit real keys
-├── gateway/
-├── services/
-│   ├── auth/
-│   ├── ai/
-│   └── logger/
-├── tests/
-│   ├── attacks/
-│   └── resilience/
-├── reports/
-│   ├── scan_before/
-│   └── scan_after/
-└── docs/
-    └── references.md
+```text
+Browser
+  |
+  | http://127.0.0.1:8080
+  v
+Nginx Edge Proxy (only host-published service)
+  |
+  | internal frontend network
+  v
+Nginx Application Gateway (internal)
+  |                 |                    |
+  v                 v                    v
+Auth Service       AI Service          Monitor Service
+Argon2 + JWT       NVIDIA NIM          SQLite event store
+                   SQLite chat store   Trivy / assessment reports
 ```
 
-## 8. Quick Start (to be completed)
+Docker networks:
+
+- `host_ingress`: standard bridge network used only by the edge proxy so Docker can publish the loopback host port. The edge proxy has a fixed upstream and no user-controlled proxy destination.
+- `frontend`: internal Docker network shared only by the edge proxy and application gateway.
+- `backend`: internal Docker network shared by the application gateway and application services. It has no external route.
+- `egress`: standard bridge network attached only to the AI service with explicit default-gateway priority so it can call the hosted NVIDIA endpoint. The Trivy scanner is a separate short-lived host-invoked container that needs registry/database egress.
+
+The separate edge proxy is intentional: Docker Engine does not publish host ports for a container attached exclusively to `internal: true` bridge networks because those networks have no default gateway. Keeping the application gateway on internal networks while publishing a minimal edge proxy preserves backend isolation.
+
+The host port mapping is `127.0.0.1:8080:8080` on the edge proxy. The application gateway, Auth, AI, and Monitor ports are not published to the host. Internal service-to-service event delivery uses a shared service token. The internal application gateway hides the monitor internal route prefix from browser clients, and the monitor service rejects internal requests without the token.
+
+## 3. Requirements
+
+- Docker Desktop / Docker Engine with `docker compose` support.
+- Python 3.10+ for setup and local test/scanner scripts.
+- Node.js is not required; the frontend is plain HTML, CSS, and JavaScript.
+- An NVIDIA API key from NVIDIA Build for live AI inference.
+- Internet access for NVIDIA inference and the first Trivy vulnerability database download.
+- Port `8080` available on the host.
+
+The application runs locally in Docker. NVIDIA inference is hosted, so a local NVIDIA GPU is not required. Trivy is run in a short-lived Docker container against locally exported image archives.
+
+## 4. First-time installation
+
+From the project root:
+
+### Step 1 - Generate secrets
 
 ```bash
-git clone <repo-url>
-cd <repo-folder>
-cp .env.example .env      # add your own NVIDIA API key
-docker compose up --build
+python3 scripts/setup.py
 ```
 
-## 9. Team and Responsibilities
+The script creates `.env` with a random JWT signing key, an internal service token, and a random first-run administrator password. It prints the administrator password once. Save it securely. The `.env` file is written with owner-only permissions where supported.
 
-| # | Name | Student ID | Responsibility |
-|---|------|------------|----------------|
-| 1 | | | Demo application setup (Docker, Compose) |
-| 2 | | | Container security and image scanning |
-| 3 | | | API security (auth, tokens, OWASP API Top 10) |
-| 4 | | | Service-to-service security and secrets |
-| 5 | | | Monitoring, logging, report and presentation |
+### Step 2 - Configure NVIDIA
 
-## 10. Timeline
+Open `.env` and set:
 
-| Dates | Goal |
-|-------|------|
-| 14–18 Nov | Confirm scope and format, add team to repo, assign tasks |
-| 19–27 Nov | Build and scan the insecure version (v1) |
-| 28 Nov – 4 Dec | Apply security controls (v2) |
-| 5–9 Dec | Attack and resilience tests, report, slides |
-| 10 Dec | Rehearsal and backup plan |
-| 11 Dec, 17:00 | Deadline |
+```dotenv
+NVIDIA_API_KEY=your_nvidia_api_key
+NVIDIA_MODEL=nvidia/nemotron-3.5-bolt-e4b
+NVIDIA_BASE_URL=https://integrate.api.nvidia.com/v1/chat/completions
+```
 
-## 11. Status
+The model is configurable. Use a model available to your NVIDIA account. Never put the API key in frontend files, screenshots, source control, or prompts.
 
-- [ ] Scope and format confirmed with the instructor
-- [ ] Repository and team access ready
-- [ ] v1 (insecure) system running
-- [ ] Scan results saved
-- [ ] v2 (secure) system running
-- [ ] Tests completed
-- [ ] Report written
-- [ ] Presentation ready
+### Step 3 - Build and start
 
-## 12. References
+```bash
+docker compose up --build -d
+```
 
-- Souppaya, M., Morello, J., Scarfone, K. (2017). *Application Container Security Guide.* NIST SP 800-190. https://doi.org/10.6028/NIST.SP.800-190
-- Chandramouli, R. (2019). *Security Strategies for Microservices-based Application Systems.* NIST SP 800-204. https://doi.org/10.6028/NIST.SP.800-204
-- OWASP. *API Security Top 10 – 2023.* https://owasp.org/API-Security/
-- Berardi, D., Giallorenzo, S., Mauro, J., Melis, A., Montesi, F., Prandini, M. (2022). *Microservice security: a systematic literature review.* PeerJ Computer Science. https://doi.org/10.7717/peerj-cs.779
-- Haindl, P., Kochberger, P., Sveggen, M. (2024). *A Systematic Literature Review of Inter-Service Security Threats and Mitigation Strategies in Microservice Architectures.* IEEE Access.
-- Rice, L. (2025). *Container Security,* 2nd Edition. O'Reilly Media.
+Open [http://127.0.0.1:8080](http://127.0.0.1:8080). Sign in as `admin` with the password printed by the setup script.
 
-## 13. Notes and Limits
+### Step 4 - Verify the stack
 
-- This project is for **educational purposes only**. All attacks and tests are run only against our own system.
-- The NVIDIA NIM free API is meant for prototyping, research and testing, not for production use. It has rate limits and can change.
-- **Never commit API keys or passwords to this repository.** Use `.env` (listed in `.gitignore`) and share only `.env.example`.
+```bash
+docker compose ps
+python3 scripts/doctor.py
+sh scripts/run_unit_tests.sh
+python3 tests/security_regression.py
+python3 tests/resilience_test.py
+```
+
+The unit tests run in a dedicated Docker test image with network access disabled. They use isolated temporary SQLite databases and mock NVIDIA inference. They do not make live API calls or scan the user's Docker images.
+
+## 5. Upgrade from CloudGuard AI 1.0
+
+1. Keep a backup of the existing project folder.
+2. Extract the 2.0.1 archive into a new folder, or replace the source files in the existing folder.
+3. Copy the existing `.env` file into the 2.0 project root. Do not generate new secrets if you want to keep the existing administrator account.
+4. From the 2.0 project root, run:
+
+   ```bash
+   docker compose up --build -d
+   ```
+
+The Compose project name is explicitly fixed as `cloudguard-ai`, so the existing `cloudguard-ai_auth_data` and `cloudguard-ai_monitor_data` volume names are retained even if the new folder has a version suffix. The new AI conversation volume is created automatically. Existing users and event records are preserved. **Do not run `docker compose down -v` during an upgrade**; that command deletes persistent volumes.
+
+## 6. Using the application
+
+- **Overview:** review 24-hour severity metrics, all-time event count, service health, recent events, and the AI briefing.
+- **AI Analyst:** chat with NVIDIA NIM. Successful conversations are stored locally per username. Use **New chat** to clear the saved history for the current account.
+- **Analyze latest events:** send recent structured events and recent Trivy scan summaries to NVIDIA for evidence-based triage. The AI response is advisory.
+- **Security Lab:** generate labelled synthetic records. These simulations do not attack external systems and do not prove a control blocked a real attack.
+- **Container security scans:** run the local Trivy script from the project root. Results are uploaded to the monitor database and shown in the Security Lab page.
+- **Event Log:** inspect up to 100 most recent records and filter by severity. The dashboard metrics are explicitly limited to the last 24 hours; the Event Log can include older records.
+- **Security Settings:** change the administrator password. Password changes invalidate the current browser session.
+- **Download security report:** export a JSON evidence bundle from the Security Lab page.
+
+## 7. Real container image scan
+
+Start the stack first, then run:
+
+```bash
+python3 scripts/scan_local_images.py
+```
+
+The script prompts for the CloudGuard administrator password, exports the four local images with `docker image save`, and runs the pinned Trivy scanner image against each archive. It does **not** mount `/var/run/docker.sock` into the scanner. Trivy's vulnerability database may need to download on the first run. The script saves scan summaries, image IDs, scanner metadata, and up to 100 representative findings per image to CloudGuard's local monitor API. It also writes a redacted raw Trivy JSON report under `reports/trivy/`; matched secret values and source snippets are redacted before the file is saved.
+
+Default images:
+
+- `cloudguard-ai/gateway:local`
+- `cloudguard-ai/auth:local`
+- `cloudguard-ai/ai:local`
+- `cloudguard-ai/monitor:local`
+
+You can scan a subset or different local image tags:
+
+```bash
+python3 scripts/scan_local_images.py --images cloudguard-ai/auth:local,cloudguard-ai/ai:local
+```
+
+A scan is evidence about the image contents at the scan time. It is not a runtime exploitability test, and a clean result does not prove the application is secure. Review findings and rebuild images after dependency or base-image updates.
+
+## 8. Original baseline build and before/after image comparison
+
+The supplied original repository is retained under `baseline/` for static review and optional image scanning. These files intentionally contain insecure demo code. **Do not run the original services or restore the original Compose file.** The baseline build script only builds images; it does not start containers.
+
+Build the original service images:
+
+```bash
+python3 scripts/build_baseline_images.py
+```
+
+Scan the baseline images with the same pinned Trivy version and settings used for the hardened images:
+
+```bash
+python3 scripts/scan_local_images.py --images cloudguard-baseline/auth:original,cloudguard-baseline/ai:original,cloudguard-baseline/logger:original,cloudguard-baseline/gateway:original
+```
+
+Then scan the hardened CloudGuard images with the default command:
+
+```bash
+python3 scripts/scan_local_images.py
+```
+
+The dashboard will contain both sets of reports. Compare only like-for-like image roles and retain image IDs, scan timestamps, scanner version, and the Trivy database state. The project does not invent baseline CVE counts. The original source-level weaknesses and their 2.0 controls are mapped in `docs/baseline-comparison.md`.
+
+## 9. Security regression assessment
+
+Run:
+
+```bash
+python3 tests/security_regression.py
+```
+
+The script prompts for the administrator password and checks gateway health, response headers, unauthenticated access denial, gateway hiding of internal service routes, CSRF request headers, session cookie flags, persistent AI history, dashboard metric consistency, scan/report endpoints, and event persistence after a safe simulation. Internal service-token enforcement is also covered by the isolated unit tests. It saves a structured assessment result to the dashboard.
+
+For quick local checks:
+
+```bash
+python3 scripts/doctor.py
+sh scripts/run_unit_tests.sh
+python3 tests/security_regression.py
+python3 tests/resilience_test.py
+```
+
+The unit suite does not replace the authenticated regression suite, the lightweight resilience check, or a live NVIDIA request. The resilience check sends a small number of health requests and does not stop containers or perform a stress test.
+
+## 10. Data storage and privacy
+
+Docker named volumes:
+
+- `cloudguard-ai_auth_data`: account password hashes.
+- `cloudguard-ai_ai_data`: AI conversation history, scoped by username.
+- `cloudguard-ai_monitor_data`: security events, Trivy scan reports, and assessment reports.
+
+NVIDIA receives the chat or analysis content sent to its hosted inference API. The application does not include passwords, JWTs, service tokens, or API keys in event records. Avoid entering real personal data, credentials, or confidential information in prompts.
+
+To stop the application without deleting data:
+
+```bash
+docker compose down
+```
+
+To start it again:
+
+```bash
+docker compose up -d
+```
+
+To create consistent SQLite backups while the services are running:
+
+```bash
+python3 scripts/backup_data.py
+```
+
+Backups are written to a private `backups/` directory with restrictive file permissions. They are not encrypted and contain account hashes, local chat history, and security records; keep them private and do not commit them.
+
+To permanently delete local user, chat, event, scan, and assessment data, use `docker compose down -v`. This is destructive and should only be done when you intentionally want a clean reset.
+
+## 11. Security controls and limitations
+
+Configured controls include Argon2 password hashing, signed JWT sessions, HttpOnly/SameSite cookies, same-origin checks on state-changing browser requests, Nginx request throttling, security response headers, internal service authentication, isolated Docker networks, non-root application processes, read-only root filesystems, and a restricted Trivy scanner container.
+
+Known limitations:
+
+- This is a local educational application, not a production-ready multi-tenant platform.
+- The AI analyst can make mistakes and cannot enforce authorization or automatically remediate systems.
+- Prompt-injection heuristics are signals, not a complete defense against prompt injection.
+- The lab's attack buttons create synthetic records. They are not real attacks.
+- Trivy scans image archives; it does not inspect live process behavior or prove runtime exploitability.
+- The app does not currently deploy a Kubernetes cluster or a service mesh. The project demonstrates containerized microservices with Docker Compose.
+- Hosted NVIDIA inference requires network access and may be subject to model availability, account limits, and service outages.
+- The JSON report is an evidence bundle, not a compliance certification or independent penetration-test report.
+
+## 12. Course alignment
+
+CloudGuard AI demonstrates the security of cloud-native applications and microservices through service isolation, gateway protection, authentication, service-to-service authentication, container image assessment, event observability, and AI-assisted security triage. See `docs/architecture.md`, `docs/security-controls.md`, `docs/baseline-comparison.md`, and `docs/demo-script.md` for the explanation to use in the research report and presentation.

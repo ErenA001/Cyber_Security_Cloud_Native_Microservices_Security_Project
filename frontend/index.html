@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="description" content="CloudGuard AI - cloud-native microservices security monitoring and AI analysis.">
+  <title>CloudGuard AI | Security Operations</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script src="/assets/app.js" defer></script>
+</head>
+<body>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <section id="login-screen" class="auth-screen">
+    <div class="auth-glow auth-glow-one"></div>
+    <div class="auth-glow auth-glow-two"></div>
+    <div class="login-card">
+      <div class="brand-mark large-mark"><span class="brand-shield">C</span></div>
+      <p class="eyebrow">CLOUD-NATIVE SECURITY OPERATIONS</p>
+      <h1>CloudGuard <span>AI</span></h1>
+      <p class="login-copy">A unified security workspace for protected microservices, event monitoring, and AI-assisted analysis.</p>
+      <form id="login-form" class="login-form">
+        <label for="username">Username</label>
+        <input id="username" name="username" autocomplete="username" required minlength="2" maxlength="64" value="admin">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="256" placeholder="Your first-run password">
+        <p id="login-error" class="form-error" aria-live="polite"></p>
+        <button class="button button-primary button-full" type="submit"><span>Sign in to workspace</span><span aria-hidden="true">&rarr;</span></button>
+      </form>
+      <div class="login-foot"><span class="pulse-dot"></span> Local deployment <span class="foot-separator">/</span> HttpOnly session cookie</div>
+      <p class="login-hint">First run? Generate credentials with <code>python3 scripts/setup.py</code>.</p>
+    </div>
+    <div class="auth-bottom">EDUCATIONAL SECURITY LAB <span>•</span> NVIDIA NIM INTEGRATION</div>
+  </section>
+
+  <div id="app-shell" class="app-shell hidden">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark"><span class="brand-shield">C</span></div>
+        <div><strong>CloudGuard <span>AI</span></strong><small>SECURITY OPERATIONS</small></div>
+      </div>
+      <div class="nav-label">WORKSPACE</div>
+      <nav class="primary-nav" aria-label="Main navigation">
+        <button class="nav-item active" data-view="dashboard"><span class="nav-icon">&#9632;</span><span>Overview</span><kbd>01</kbd></button>
+        <button class="nav-item" data-view="analyst"><span class="nav-icon">&#10022;</span><span>AI Analyst</span><kbd>02</kbd></button>
+        <button class="nav-item" data-view="lab"><span class="nav-icon">&#9673;</span><span>Security Lab</span><kbd>03</kbd></button>
+        <button class="nav-item" data-view="events"><span class="nav-icon">&#9776;</span><span>Event Log</span><kbd>04</kbd></button>
+        <button class="nav-item" data-view="settings"><span class="nav-icon">&#9881;</span><span>Settings</span><kbd>05</kbd></button>
+      </nav>
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-system-card">
+        <div class="system-card-top"><span class="pulse-dot"></span><span>LOCAL ENVIRONMENT</span></div>
+        <strong>Protected workspace</strong>
+        <p>Services run in isolated Docker networks. Only the loopback edge proxy is published; the application gateway remains internal.</p>
+        <div class="system-card-line"><span>Gateway</span><span class="status-text" id="sidebar-gateway-status">Checking</span></div>
+      </div>
+      <div class="sidebar-user">
+        <div class="avatar" id="user-avatar">A</div>
+        <div class="user-meta"><strong id="user-name">Administrator</strong><small id="user-role">ADMINISTRATOR</small></div>
+        <button id="logout-button" class="icon-button logout-button" title="Sign out" aria-label="Sign out">&#10140;</button>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div class="breadcrumbs"><span>CloudGuard</span><span class="crumb-slash">/</span><strong id="topbar-title">Overview</strong></div>
+        <div class="topbar-actions">
+          <div class="live-indicator"><span class="pulse-dot"></span><span>LOCAL STACK</span></div>
+          <button id="refresh-button" class="button button-quiet button-small"><span class="refresh-icon">&#8635;</span> Refresh data</button>
+        </div>
+      </header>
+
+      <section id="dashboard-view" class="view-section">
+        <div class="page-heading">
+          <div><p class="eyebrow">SECURITY OVERVIEW / LAST 24 HOURS</p><h1>Good to see you, <span id="greeting-name">admin</span>.</h1><p class="page-subtitle">Monitor your microservices, review security signals, and investigate with CloudGuard AI.</p></div>
+          <button id="dashboard-analyze-button" class="button button-primary"><span class="sparkle">&#10022;</span> Analyze recent events</button>
+        </div>
+
+        <div class="metrics-grid">
+          <article class="metric-card metric-critical"><div class="metric-top"><span>CRITICAL EVENTS</span><span class="metric-icon">&#9888;</span></div><div class="metric-value" id="metric-critical">--</div><div class="metric-foot"><span class="metric-dot red"></span>Requires investigation</div></article>
+          <article class="metric-card metric-warning"><div class="metric-top"><span>WARNINGS</span><span class="metric-icon">&#9673;</span></div><div class="metric-value" id="metric-warnings">--</div><div class="metric-foot"><span class="metric-dot amber"></span>Signals to review</div></article>
+          <article class="metric-card"><div class="metric-top"><span>EVENTS / 24H</span><span class="metric-icon">&#9776;</span></div><div class="metric-value" id="metric-total">--</div><div class="metric-foot"><span class="metric-dot blue"></span><span id="metric-total-foot">Collected in last 24 hours</span></div></article>
+          <article class="metric-card metric-ai"><div class="metric-top"><span>AI PROVIDER</span><span class="metric-icon">&#10022;</span></div><div class="metric-value metric-provider" id="metric-ai">Checking</div><div class="metric-foot"><span class="metric-dot green" id="ai-dot"></span><span id="metric-ai-foot">NVIDIA NIM connection</span></div></article>
+        </div>
+
+        <div class="dashboard-grid">
+          <article class="panel activity-panel">
+            <div class="panel-heading"><div><p class="eyebrow">OBSERVABILITY</p><h2>Security activity</h2></div><span class="panel-period">24H <span class="period-dot"></span></span></div>
+            <div class="chart-legend"><span><i class="legend-critical"></i>Critical</span><span><i class="legend-warning"></i>Warning</span><span><i class="legend-info"></i>Info</span></div>
+            <div id="activity-chart" class="activity-chart" aria-label="Security event activity chart"></div>
+            <div class="chart-axis"><span>24 hours ago</span><span>Now</span></div>
+          </article>
+          <article class="panel insight-panel">
+            <div class="panel-heading"><div><p class="eyebrow">NVIDIA NIM / AI INSIGHT</p><h2>Analyst briefing</h2></div><span class="ai-badge"><span class="pulse-dot"></span> AI</span></div>
+            <div id="analysis-content" class="analysis-content"><div class="insight-empty"><div class="insight-symbol">&#10022;</div><strong>No analysis yet</strong><p>Ask CloudGuard AI to review the latest event records and prioritize the risks.</p></div></div>
+            <button id="insight-open-chat" class="text-button">Open AI Analyst <span>&rarr;</span></button>
+          </article>
+          <article class="panel services-panel">
+            <div class="panel-heading"><div><p class="eyebrow">RUNTIME</p><h2>Service health</h2></div><span class="panel-tag">DOCKER</span></div>
+            <div class="service-list">
+              <div class="service-row"><div class="service-symbol gateway-symbol">G</div><div class="service-name"><strong>API Gateway</strong><small>Nginx / :8080</small></div><span class="service-state" id="status-gateway"><i></i>Checking</span></div>
+              <div class="service-row"><div class="service-symbol auth-symbol">A</div><div class="service-name"><strong>Auth Service</strong><small>JWT / Argon2</small></div><span class="service-state" id="status-auth"><i></i>Checking</span></div>
+              <div class="service-row"><div class="service-symbol ai-symbol">AI</div><div class="service-name"><strong>AI Service</strong><small>NVIDIA NIM</small></div><span class="service-state" id="status-ai"><i></i>Checking</span></div>
+              <div class="service-row"><div class="service-symbol monitor-symbol">M</div><div class="service-name"><strong>Monitor Service</strong><small>Event store / SQLite</small></div><span class="service-state" id="status-monitor"><i></i>Checking</span></div>
+            </div>
+            <div class="network-note"><span>&#9679;</span> Internal services are not published to the host.</div>
+          </article>
+          <article class="panel events-panel">
+            <div class="panel-heading"><div><p class="eyebrow">DETECTION FEED</p><h2>Recent security events</h2></div><button class="text-button" data-open-events>View all <span>&rarr;</span></button></div>
+            <div id="recent-events" class="recent-events"><div class="loading-line">Loading events...</div></div>
+          </article>
+        </div>
+        <footer class="page-footer"><span>CloudGuard AI <b>v2.0.1</b></span><span>For authorized educational testing only</span></footer>
+      </section>
+
+      <section id="analyst-view" class="view-section hidden">
+        <div class="page-heading compact-heading"><div><p class="eyebrow">NVIDIA NIM / SECURITY COPILOT</p><h1>AI Analyst</h1><p class="page-subtitle">Ask questions about cloud-native security or request an evidence-based review of recent events.</p></div><div class="provider-chip" id="provider-chip"><span class="pulse-dot"></span> Checking NVIDIA NIM</div></div>
+        <div class="analyst-layout">
+          <div class="panel chat-panel">
+            <div class="chat-header"><div class="chat-avatar">&#10022;</div><div><strong>CloudGuard AI</strong><small id="chat-model-label">NVIDIA NIM / Nemotron</small></div><button id="chat-clear-button" class="button button-quiet button-small chat-clear-button" type="button">New chat</button><span class="chat-secure-label">SECURE SESSION</span></div>
+            <div id="chat-messages" class="chat-messages" aria-live="polite">
+              <div class="chat-message assistant-message"><div class="message-avatar">CG</div><div class="message-body"><div class="message-author">CloudGuard AI <span>ASSISTANT</span></div><div class="message-text">Hello. I can help explain microservices security, interpret the events collected by this lab, and suggest defensive improvements. I cannot run scans or change your infrastructure. What would you like to investigate?</div></div></div>
+            </div>
+            <div class="suggestion-row"><button class="suggestion-chip" data-prompt="Explain the main security risks in a Docker-based microservices architecture.">Microservices risks</button><button class="suggestion-chip" data-prompt="Explain how to review and prioritize recent security event records.">Review latest events</button><button class="suggestion-chip" data-prompt="How should we secure service-to-service communication?">Service-to-service security</button></div>
+            <form id="chat-form" class="chat-composer"><textarea id="chat-input" rows="1" maxlength="6000" placeholder="Ask CloudGuard AI about a security concern..." aria-label="Message to CloudGuard AI"></textarea><button id="chat-send" class="send-button" type="submit" aria-label="Send message">&#10148;</button></form>
+            <div class="chat-disclaimer">AI output is advisory. Verify recommendations before making production changes. Do not submit secrets or personal data.</div>
+          </div>
+          <aside class="analyst-side">
+            <article class="panel context-panel"><div class="panel-heading"><div><p class="eyebrow">CONTEXT</p><h2>Analysis tools</h2></div></div><p class="side-copy">The analyst reviews recent event records and saved Trivy scan findings. It does not execute scans or change infrastructure.</p><button id="analyst-analyze-button" class="button button-primary button-full">&#10022; Analyze latest events</button><div class="context-divider"></div><div class="context-stat"><span>Recent events available</span><strong id="context-event-count">--</strong></div><div class="context-stat"><span>Conversation storage</span><strong>Persistent SQLite</strong></div><div class="context-stat"><span>Session protection</span><strong>HttpOnly / SameSite</strong></div></article>
+            <article class="panel guardrail-panel"><div class="guardrail-icon">&#9888;</div><strong>Security boundary</strong><p>Prompt-injection patterns can be flagged, but no heuristic or language model can guarantee prompt-injection prevention. Authorization is enforced by the backend, not by AI.</p></article>
+          </aside>
+        </div>
+      </section>
+
+      <section id="lab-view" class="view-section hidden">
+        <div class="page-heading compact-heading"><div><p class="eyebrow">CONTROL VALIDATION / SAFE SIMULATIONS</p><h1>Security Lab</h1><p class="page-subtitle">Generate synthetic security events to demonstrate detection, logging, and AI-assisted triage.</p></div><span class="lab-mode-badge"><span class="pulse-dot"></span> SIMULATION MODE</span></div>
+        <div class="lab-notice"><span class="notice-icon">i</span><div><strong>Safe demonstration environment</strong><p>These buttons write clearly labelled synthetic events to the local event database. They do not attack external systems or execute destructive actions.</p></div></div>
+        <section class="panel baseline-panel">
+          <div class="panel-heading"><div><p class="eyebrow">INSECURE V1 / HARDENED V2</p><h2>Security hardening comparison</h2><p class="panel-subtitle">Mapped to the original CS24 GitHub project supplied for this assignment.</p></div><span class="panel-tag">BEFORE / AFTER</span></div>
+          <div class="table-wrap"><table class="event-table baseline-table"><thead><tr><th>AREA</th><th>ORIGINAL BASELINE</th><th>CLOUDGUARD AI 2.0</th><th>VERIFICATION</th></tr></thead><tbody>
+            <tr><td>Network exposure</td><td>Auth, AI and Logger host ports published</td><td>Loopback edge proxy published; application gateway remains internal</td><td>Compose config</td></tr>
+            <tr><td>Credentials</td><td>Hard-coded plaintext passwords</td><td>Random bootstrap password + Argon2</td><td>Auth tests</td></tr>
+            <tr><td>Session token</td><td>Base64 username token</td><td>Signed, expiring JWT + HttpOnly cookie</td><td>Auth tests</td></tr>
+            <tr><td>AI access</td><td>No authentication or rate limit</td><td>JWT-protected route + Nginx throttling</td><td>Regression suite</td></tr>
+            <tr><td>Logging</td><td>Raw prompts/replies in public memory list</td><td>Metadata-only events + private local chat store</td><td>Monitor tests</td></tr>
+            <tr><td>Internal APIs</td><td>No service authentication</td><td>Internal token + gateway route hiding</td><td>Service-token tests</td></tr>
+            <tr><td>Containers</td><td>Debug mode; no runtime hardening</td><td>Non-root, read-only, dropped capabilities</td><td>Docker config</td></tr>
+            <tr><td>Image scanning</td><td>Planned, not implemented</td><td>Trivy scan and saved evidence reports</td><td>Live scan report</td></tr>
+          </tbody></table></div>
+          <p class="table-footnote">The original v1 is a source-code baseline and is not deployed by CloudGuard AI 2.0. No baseline CVE count or attack result is invented.</p>
+        </section>
+        <div class="lab-grid">
+          <article class="panel lab-card"><div class="lab-card-top"><div class="lab-icon red-icon">&#9888;</div><span class="severity-pill critical-pill">CRITICAL</span></div><h2>Brute-force pattern</h2><p>Simulates repeated failed authentication attempts and records the expected gateway rate-limit control.</p><div class="lab-meta"><span>AUTHENTICATION</span><span>25 attempts / 60s</span></div><button class="button button-outline" data-simulate="brute_force">Generate event <span>&rarr;</span></button></article>
+          <article class="panel lab-card"><div class="lab-card-top"><div class="lab-icon amber-icon">&#9673;</div><span class="severity-pill warning-pill">WARNING</span></div><h2>Unauthorized API access</h2><p>Simulates a request to a protected AI route without a valid session and records the JWT access-control response.</p><div class="lab-meta"><span>API SECURITY</span><span>JWT / RBAC</span></div><button class="button button-outline" data-simulate="unauthorized_api">Generate event <span>&rarr;</span></button></article>
+          <article class="panel lab-card"><div class="lab-card-top"><div class="lab-icon amber-icon">&#9638;</div><span class="severity-pill warning-pill">WARNING</span></div><h2>Container vulnerability</h2><p>Simulates a high-severity image finding and documents the intended Trivy scanning control.</p><div class="lab-meta"><span>CONTAINER SECURITY</span><span>IMAGE SCAN</span></div><button class="button button-outline" data-simulate="container_risk">Generate event <span>&rarr;</span></button></article>
+          <article class="panel lab-card"><div class="lab-card-top"><div class="lab-icon purple-icon">&#10022;</div><span class="severity-pill warning-pill">WARNING</span></div><h2>Prompt-injection signal</h2><p>Simulates a suspicious prompt pattern. The AI service also applies a lightweight heuristic to incoming chat messages.</p><div class="lab-meta"><span>AI SECURITY</span><span>INPUT BOUNDARY</span></div><button class="button button-outline" data-simulate="prompt_injection">Generate event <span>&rarr;</span></button></article>
+          <article class="panel lab-card"><div class="lab-card-top"><div class="lab-icon blue-icon">&#8645;</div><span class="severity-pill warning-pill">WARNING</span></div><h2>API rate limiting</h2><p>Creates a synthetic traffic-spike event and records the Nginx request-throttling control.</p><div class="lab-meta"><span>EDGE PROTECTION</span><span>40 requests / 10s</span></div><button class="button button-outline" data-simulate="rate_limit">Generate event <span>&rarr;</span></button></article>
+          <article class="panel lab-card lab-summary-card"><div class="summary-icon">&#10003;</div><h2>What this lab proves</h2><p>Event persistence, severity classification, role-protected event access, and AI triage. It does not prove a control is effective until the corresponding live test is run and its result is recorded.</p><button id="lab-open-events" class="text-button">Open event log <span>&rarr;</span></button></article>
+        </div>
+        <section class="panel scan-workspace">
+          <div class="panel-heading"><div><p class="eyebrow">REAL IMAGE ASSESSMENT</p><h2>Container security scans</h2><p class="panel-subtitle">Scan the locally built CloudGuard images with Trivy. Results are saved to the local monitoring database.</p></div><span class="panel-tag">TRIVY / LOCAL IMAGES</span></div>
+          <div class="scan-instructions">
+            <div class="scan-instruction-copy"><strong>Scan hardened CloudGuard 2.0 images</strong><p>The scanner runs in an isolated Docker container. It receives a read-only image archive; the Docker socket is never mounted into Trivy.</p><code>python3 scripts/scan_local_images.py</code></div>
+            <div class="scan-actions"><button id="copy-scan-command" class="button button-outline" type="button">Copy secure scan</button><button id="refresh-scans-button" class="button button-quiet" type="button">Refresh results</button></div>
+          </div>
+          <div class="scan-instructions baseline-scan-instructions">
+            <div class="scan-instruction-copy"><strong>Build and scan the original insecure baseline</strong><p>For the assignment's before/after comparison, build the original images without starting them, then scan those archives with the same Trivy settings. Never run the intentionally insecure baseline services.</p><code>python3 scripts/build_baseline_images.py</code><br><code>python3 scripts/scan_local_images.py --images cloudguard-baseline/auth:original,cloudguard-baseline/ai:original,cloudguard-baseline/logger:original,cloudguard-baseline/gateway:original</code></div>
+            <div class="scan-actions"><button id="copy-baseline-build-command" class="button button-outline" type="button">Copy baseline build</button><button id="copy-baseline-scan-command" class="button button-outline" type="button">Copy baseline scan</button></div>
+          </div>
+          <div id="scan-summary" class="scan-summary"><div class="loading-line">Loading saved scan reports...</div></div>
+          <div class="table-wrap"><table class="event-table scan-table"><thead><tr><th>IMAGE</th><th>SCANNER</th><th>CRITICAL</th><th>HIGH</th><th>MEDIUM</th><th>FINDINGS</th><th>SCANNED</th></tr></thead><tbody id="scan-table-body"><tr><td colspan="7" class="empty-cell">No scan reports yet.</td></tr></tbody></table></div>
+          <div class="assessment-heading"><div><p class="eyebrow">APPLICATION CONTROL TESTS</p><h3>Security regression results</h3></div><span class="panel-tag">AUTOMATED CHECKS</span></div>
+          <div class="table-wrap"><table class="event-table scan-table"><thead><tr><th>ASSESSMENT</th><th>STATUS</th><th>PASSED</th><th>FAILED</th><th>RUN TIME</th></tr></thead><tbody id="assessment-table-body"><tr><td colspan="5" class="empty-cell">No assessment results yet.</td></tr></tbody></table></div>
+          <div class="scan-actions scan-footer-actions"><button id="copy-assessment-command" class="button button-outline" type="button">Copy security test command</button><button id="copy-resilience-command" class="button button-outline" type="button">Copy resilience test command</button><button id="download-report-button" class="button button-primary" type="button">Download JSON report</button></div>
+        </section>
+      </section>
+
+      <section id="events-view" class="view-section hidden">
+        <div class="page-heading compact-heading"><div><p class="eyebrow">OBSERVABILITY / AUDIT TRAIL</p><h1>Security events</h1><p class="page-subtitle">All recorded events, including synthetic classroom scenarios and real application telemetry.</p></div><div class="event-controls"><select id="severity-filter" aria-label="Filter by severity"><option value="">All severities</option><option value="CRITICAL">Critical</option><option value="WARNING">Warning</option><option value="INFO">Info</option></select><button id="events-refresh-button" class="button button-quiet">&#8635; Refresh</button></div></div>
+        <article class="panel event-table-panel"><div class="panel-heading"><div><p class="eyebrow">LOCAL EVENT STORE</p><h2>Event records</h2></div><span class="panel-tag" id="event-count-label">0 RECORDS</span></div><div class="table-wrap"><table class="event-table"><thead><tr><th>SEVERITY</th><th>EVENT</th><th>SOURCE</th><th>ACTOR</th><th>TIMESTAMP</th></tr></thead><tbody id="events-table-body"><tr><td colspan="5" class="empty-cell">Loading events...</td></tr></tbody></table></div></article>
+        <p class="table-footnote">Event records intentionally exclude passwords, API keys, JWT values, raw prompts, and model responses.</p>
+      </section>
+
+      <section id="settings-view" class="view-section hidden">
+        <div class="page-heading compact-heading"><div><p class="eyebrow">ACCOUNT / LOCAL SECURITY</p><h1>Security settings</h1><p class="page-subtitle">Manage your local administrator credentials and understand where CloudGuard stores data.</p></div></div>
+        <div class="settings-grid">
+          <article class="panel settings-panel">
+            <div class="panel-heading"><div><p class="eyebrow">ACCOUNT PROTECTION</p><h2>Change password</h2></div><span class="panel-tag">ARGON2</span></div>
+            <form id="password-change-form" class="settings-form">
+              <label for="current-password">Current password</label><input id="current-password" type="password" autocomplete="current-password" required maxlength="256">
+              <label for="new-password">New password</label><input id="new-password" type="password" autocomplete="new-password" minlength="14" required maxlength="256">
+              <label for="confirm-password">Confirm new password</label><input id="confirm-password" type="password" autocomplete="new-password" minlength="14" required maxlength="256">
+              <p class="form-help">Use at least 14 characters. Changing your password signs you out of the current session.</p>
+              <p id="password-change-error" class="form-error" aria-live="polite"></p>
+              <button class="button button-primary" type="submit">Update password</button>
+            </form>
+          </article>
+          <article class="panel settings-panel">
+            <div class="panel-heading"><div><p class="eyebrow">DATA & PRIVACY</p><h2>Local storage boundaries</h2></div><span class="panel-tag">LOCAL FIRST</span></div>
+            <div class="settings-fact"><strong>Authentication</strong><p>Passwords are stored as Argon2 hashes. Browser sessions use signed JWTs in HttpOnly, SameSite cookies.</p></div>
+            <div class="settings-fact"><strong>Monitoring</strong><p>Security events, scan results, and assessment summaries are stored in the local SQLite data volume.</p></div>
+            <div class="settings-fact"><strong>AI conversations</strong><p>Chat history is stored locally in SQLite and is scoped to the signed-in username. Prompts sent to NVIDIA are processed by NVIDIA's hosted API.</p></div>
+            <div class="settings-fact"><strong>Secrets</strong><p>The NVIDIA API key stays in the backend environment. Do not commit .env or include secrets in prompts, logs, or screenshots.</p></div>
+          </article>
+        </div>
+      </section>
+
+      <footer class="page-footer global-footer"><span>CloudGuard AI <b>v2.0.1</b></span><span>For authorized educational testing only</span></footer>
+    </main>
+  </div>
+</body>
+</html>
