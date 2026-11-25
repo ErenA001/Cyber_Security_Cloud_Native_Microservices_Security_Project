@@ -39,7 +39,9 @@ The screenshots below document the currently demonstrated Overview and AI event-
 ![CloudGuard AI demo preview](docs/demo/cloudguard-ai-demo-preview.gif)
 
 <!-- GITHUB_INLINE_VIDEO_START -->
-For inline playback, upload `docs/demo/cloudguard-ai-overview-demo.mp4` as a GitHub Markdown video attachment, then replace this note with the generated asset URL on its own line. See [demo media instructions](docs/demo/README.md).
+
+https://github.com/user-attachments/assets/8fb462e9-1aee-4aea-b8e4-5bd0b0a4b67b
+
 <!-- GITHUB_INLINE_VIDEO_END -->
 
 See [the implementation progress and validation record](docs/PROJECT_PROGRESS.md) for completed work, test evidence, limitations, and remaining tasks.
